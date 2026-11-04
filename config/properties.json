@@ -1,0 +1,24 @@
+{
+	"is_debug": true,
+	"db_config": {
+		"host": "127.0.0.1",
+		"port": -1,
+		"name": "Nekodancer",
+		"username": "",
+		"password": ""
+	},
+	"adminpanel_config": {
+		"port": 8882,
+		"username": "root",
+		"password": "changeme"
+	},
+	"swf_config": {
+		"version": 55,
+		"ports": [14801, 15801],
+		"connection_key": "ytVOiM",
+		"packet_keys": [],
+		"login_keys": [16777216, 134217728, 256, 16384, 2048, 14126415, 8655365],
+		"authorization_key": 0,
+		"swf_url": ""
+	}
+}

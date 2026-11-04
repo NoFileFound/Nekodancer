@@ -1,0 +1,56 @@
+package org.nekodancer.config;
+
+// Imports
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.nekodancer.config.nekoconfig.*;
+
+public class NekodancerConfig {
+    @JsonProperty("is_debug")
+    private boolean is_debug;
+    @JsonProperty("db_config")
+    private DatabaseConfig db_config;
+    @JsonProperty("adminpanel_config")
+    private AdminPanelConfig adminpanel_config;
+    @JsonProperty("swf_config")
+    private SwfConfig swf_config;
+
+    /**
+     * Creates a new transformice config.
+     */
+    public NekodancerConfig() {
+        this.db_config = new DatabaseConfig();
+        this.adminpanel_config = new AdminPanelConfig();
+    }
+
+    /**
+     * Checks if the server is in debug mode.
+     * @return True if the server is in debug mode or else False.
+     */
+    public boolean getIsDebug() {
+        return this.is_debug;
+    }
+
+    /**
+     * Gets the database config.
+     * @return The database config.
+     */
+    public DatabaseConfig getDBConfig() {
+        return this.db_config;
+    }
+
+    /**
+     * Gets the admin panel config.
+     * @return The admin panel config.
+     */
+    public AdminPanelConfig getAdmPanelConfig() {
+        return this.adminpanel_config;
+    }
+
+    /**
+     * Gets the SWF config.
+     * @return The SWF config.
+     */
+    public SwfConfig getSWFConfig() {
+        return this.swf_config;
+    }
+}
