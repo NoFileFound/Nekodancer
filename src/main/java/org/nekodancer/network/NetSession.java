@@ -19,22 +19,17 @@ public final class NetSession extends PSGameClient {
     private final Channel channel;
     private GamePlayer player;
     private PlayerConnectionInfo connectionData;
-    private int verificationCode;
     private int loginAttempts;
     private String registerCaptchaCode;
     private String currentCommunity;
     private boolean hasPassedHandShake;
-    private boolean hasPassedBotVerification;
     private boolean hasBanned;
-    public boolean hasConfirmed2FA;
     private final String countryCode;
     private final String countryLanguageCode;
     private final TimerKeepAlive keepAliveTimer;
     public String tmpEmailAddress;
     public String tmpEmailAddressVerCode;
-    public String tmp2FAcode;
     public String tmpUsername;
-    public String tmp2FAAdmin;
     public boolean isVerifiedIdentity;
 
     // Debug
@@ -49,20 +44,15 @@ public final class NetSession extends PSGameClient {
     public NetSession(GameServer server, Channel channel) {
         super(server);
         this.channel = channel;
-        this.verificationCode = -1;
         this.loginAttempts = 0;
         this.hasPassedHandShake = false;
-        this.hasPassedBotVerification = false;
         this.hasBanned = false;
-        this.hasConfirmed2FA = false;
         this.isVerifiedIdentity = false;
         this.currentCommunity = "";
         this.registerCaptchaCode = "";
         this.tmpEmailAddress = "";
         this.tmpEmailAddressVerCode = "";
-        this.tmp2FAcode = "";
         this.tmpUsername = "";
-        this.tmp2FAAdmin = "";
         this.isDebugPacketLog = server.getConfig().getIsDebug();
         this.isDebugException = server.getConfig().getIsDebug();
 
@@ -157,22 +147,6 @@ public final class NetSession extends PSGameClient {
     }
 
     /**
-     * Checks if the player has confirmed the 2FA.
-     * @return True if the player has confirmed the 2FA.
-     */
-    public boolean getCheckHasConfirmed2FA() {
-        return this.hasConfirmed2FA;
-    }
-
-    /**
-     * Checks if the session has passed the anti-bot verification.
-     * @return True if the session has passed or else False.
-     */
-    public boolean getCheckHasPassedBotVerification() {
-        return this.hasPassedBotVerification;
-    }
-
-    /**
      * Checks if the session has sent the handshake packet.
      * @return True if the session has sent or else False.
      */
@@ -261,14 +235,6 @@ public final class NetSession extends PSGameClient {
     }
 
     /**
-     * Gets the session's verification code.
-     * @return The session's verification code.
-     */
-    public int getVerificationCode() {
-        return this.verificationCode;
-    }
-
-    /**
      * Sets the session's connection information fetched from the handshake.
      * @param data The connection data.
      */
@@ -293,27 +259,11 @@ public final class NetSession extends PSGameClient {
     }
 
     /**
-     * Sets if the player has confirmed the 2FA.
-     * @param hasConfirmed2FA True if the player has confirmed the 2FA or else False.
-     */
-    public void setHasConfirmed2FA(boolean hasConfirmed2FA) {
-        this.hasConfirmed2FA = hasConfirmed2FA;
-    }
-
-    /**
      * Sets whether this session has completed the handshake.
      * @param hasPassedHandShake True if the handshake was successfull or else False.
      */
     public void setHasPassedHandShake(boolean hasPassedHandShake) {
         this.hasPassedHandShake = hasPassedHandShake;
-    }
-
-    /**
-     * Sets whether this session has completed the anti bot verification.
-     * @param hasPassedBotVerification True if the anti bot verification was successfull or else False.
-     */
-    public void setHasPassedBotVerification(boolean hasPassedBotVerification) {
-        this.hasPassedBotVerification = hasPassedBotVerification;
     }
 
     /**
@@ -338,13 +288,5 @@ public final class NetSession extends PSGameClient {
      */
     public void setRegisterCaptchaCode(String registerCaptchaCode) {
         this.registerCaptchaCode = registerCaptchaCode;
-    }
-
-    /**
-     * Sets the verification code to the session.
-     * @param verificationCode The verification code to set.
-     */
-    public void setVerificationCode(int verificationCode) {
-        this.verificationCode = verificationCode;
     }
 }

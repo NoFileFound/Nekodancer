@@ -1,5 +1,5 @@
 {
-	"is_debug": true,
+	"is_debug": false,
 	"db_config": {
 		"host": "127.0.0.1",
 		"port": -1,
@@ -16,9 +16,14 @@
 		"version": 55,
 		"ports": [14801, 15801],
 		"connection_key": "ytVOiM",
-		"packet_keys": [],
+		"packet_keys": [35, 47, 10, 18, 55, 18, 25, 21, 52, 44, 105, 76, 123, 119, 82, 74, 111, 74, 113, 125],
 		"login_keys": [16777216, 134217728, 256, 16384, 2048, 14126415, 8655365],
-		"authorization_key": 0,
+		"authorization_key": 156489290,
 		"swf_url": ""
+	},
+	"game_config": {
+		"login_attempts": 15,
+		"max_accounts_per_email": 10,
+		"max_players": 100
 	}
 }

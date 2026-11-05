@@ -1,11 +1,11 @@
 package org.nekodancer.packets.send.informations;
 
 // Imports
+import org.nekodancer.network.NetByteArray;
+import org.nekodancer.packets.PacketOpcodes;
 import org.psframework.network.PSSendPacket;
 import org.psframework.network.PSSendPacketException;
 import org.psframework.utils.PSByteArray;
-import org.nekodancer.network.NetByteArray;
-import org.nekodancer.packets.PacketOpcodes;
 
 public final class PacketSendHandshake extends PSSendPacket {
     private final int connectedPlayers;

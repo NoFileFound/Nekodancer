@@ -13,6 +13,8 @@ public class NekodancerConfig {
     private AdminPanelConfig adminpanel_config;
     @JsonProperty("swf_config")
     private SwfConfig swf_config;
+    @JsonProperty("game_config")
+    private GameConfig game_config;
 
     /**
      * Creates a new transformice config.
@@ -52,5 +54,13 @@ public class NekodancerConfig {
      */
     public SwfConfig getSWFConfig() {
         return this.swf_config;
+    }
+
+    /**
+     * Gets the Game's config.
+     * @return The game's config.
+     */
+    public GameConfig getGameConfig() {
+        return this.game_config;
     }
 }

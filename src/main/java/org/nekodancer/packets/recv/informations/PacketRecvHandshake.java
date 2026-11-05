@@ -38,8 +38,5 @@ public final class PacketRecvHandshake extends PSReceivePacket<GameServer, NetSe
         client.setConnectionData(new PlayerConnectionInfo(connectionPlatform, browserInfo, loaderStageSize, CCFData, fontNameHash, serverString, referrerId, timestamp));
         client.sendData(new PacketSendHandshake(gameServer.getPlayers().size(), client.getCountryCode(), language, gameServer.getConfig().getSWFConfig().getAuthorizationKey(), true));
         client.setHasPassedHandShake(true);
-
-        // Verification
-        client.setHasPassedBotVerification(true);
     }
 }

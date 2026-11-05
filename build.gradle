@@ -17,6 +17,9 @@ dependencies {
     // PS Framework
     implementation('com.github.NoFileFound:PSFramework:1.0.2')
     implementation('io.netty:netty-all:4.1.130.Final')
+
+    // Database
+    implementation('dev.morphia.morphia:morphia-core:2.4.14')
 }
 
 shadowJar {

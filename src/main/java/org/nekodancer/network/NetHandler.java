@@ -9,6 +9,9 @@ import org.nekodancer.GameServer;
 import org.nekodancer.packets.PacketOpcodes;
 import org.psframework.network.PSReceivePacketException;
 
+// Packets
+import org.nekodancer.packets.recv.login.PacketRecvLogin;
+
 public final class NetHandler extends ChannelInboundHandlerAdapter
 {
     private final GameServer server;
@@ -29,9 +32,20 @@ public final class NetHandler extends ChannelInboundHandlerAdapter
     public void channelActive(ChannelHandlerContext context) {
         Channel channel = context.channel();
         String ipAddress = ((InetSocketAddress) context.channel().remoteAddress()).getAddress().getHostAddress();
+        Long expiration = this.server.getTempBannedIPs().get(ipAddress);
+        if (expiration != null) {
+            if (System.currentTimeMillis() < expiration) {
+                context.close();
+                return;
+            }
+
+            this.server.getTempBannedIPs().remove(ipAddress, expiration);
+        }
+
         NetSession session = new NetSession(this.server, context.channel());
         channel.attr(NetSession.CLIENT_KEY).set(session);
         this.server.getClientSessions().put(channel.id(), session);
+        session.getKeepAliveTimer().reset();
         this.server.getLogger().debug(String.format("[%s] New session connected -> %s", ipAddress, context.channel().remoteAddress().toString()));
         context.fireChannelActive();
     }
@@ -51,6 +65,14 @@ public final class NetHandler extends ChannelInboundHandlerAdapter
                 var player = session.getPlayer();
                 if (player != null)
                     player.disconnect(false);
+
+                NetSession nextPlayer = this.server.getPlayerQueue().leave(session);
+                if (nextPlayer != null) {
+                    var request = this.server.getPlayerQueue().removeLoginRequest(nextPlayer);
+                    if (request != null) {
+                        new PacketRecvLogin().handle(this.server, nextPlayer, request.getHeader(), request.getData());
+                    }
+                }
             }
         } finally {
             this.server.getClientSessions().remove(channel.id());
@@ -84,10 +106,6 @@ public final class NetHandler extends ChannelInboundHandlerAdapter
                 throw new PSReceivePacketException(String.format("[%s] Tried to send an illegal packet.", session.getIpAddress()));
             }
 
-            if ((packetOpcode == PacketOpcodes.RECV_LOGIN_PLAYER || packetOpcode == PacketOpcodes.RECV_CREATE_ACCOUNT_CAPTCHA_GEN || packetOpcode == PacketOpcodes.RECV_CREATE_ACCOUNT) && !session.getCheckHasPassedBotVerification()) {
-                throw new PSReceivePacketException(String.format("[%s] Tried to login/register without passing the antibot verification.", session.getIpAddress()));
-            }
-
             if (session.getCheckHasBanned()) {
                 return;
             }
@@ -115,6 +133,8 @@ public final class NetHandler extends ChannelInboundHandlerAdapter
         }
 
         this.server.getLogger().error("Client error: ", cause);
-        context.close();
+        if (!session.getCheckIsDebugException()) {
+            context.close();
+        }
     }
 }
