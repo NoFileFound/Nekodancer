@@ -7,6 +7,7 @@ import org.nekodancer.GameServer;
 import org.nekodancer.command.Command;
 import org.nekodancer.command.CommandHandler;
 import org.nekodancer.network.NetByteArray;
+import org.nekodancer.packets.send.neko.PacketSendNekoPlayerInitialize;
 import org.psframework.network.PSSendPacket;
 import org.psframework.network.PSSendPacketException;
 import org.psframework.utils.PSByteArray;
@@ -16,6 +17,22 @@ import org.psframework.utils.PSByteArray;
 public class Test implements CommandHandler {
     @Override
     public void execute(GamePlayer player, GameServer server, List<String> args) {
-        CommandHandler.sendServerMessage(player, "OK");
+
     }
 }
+
+
+
+/*
+SEND_NEKO_PLAY_PERSONAL_MUSIC_PLAYLIST:
+
+hasCustomImage.
+if (hasCustomImage)
+    unk
+    song title
+    song url ("x_mondes/song_icon.jpg")
+    is the next music to play
+else
+    unk
+    song title.
+ */

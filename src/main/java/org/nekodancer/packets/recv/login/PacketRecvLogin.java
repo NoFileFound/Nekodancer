@@ -1,10 +1,10 @@
 package org.nekodancer.packets.recv.login;
 
 // Imports
-import java.util.concurrent.TimeUnit;
 import org.nekodancer.GamePlayer;
 import org.nekodancer.GameServer;
 import org.nekodancer.data.objects.AccountErrorType;
+import org.nekodancer.database.data.IpTempBanEntry;
 import org.nekodancer.database.data.PlayerEntity;
 import org.nekodancer.network.NetByteArray;
 import org.nekodancer.network.NetSession;
@@ -59,7 +59,7 @@ public final class PacketRecvLogin extends PSReceivePacket<GameServer, NetSessio
         }
 
         if (client.getLoginAttempts() >= gameServer.getConfig().getGameConfig().getLoginAttempts()) {
-            gameServer.getTempBannedIPs().put(client.getIpAddress(), System.currentTimeMillis() + TimeUnit.HOURS.toMillis(24));
+            gameServer.getDatabase().saveIpTempBan(new IpTempBanEntry(client.getIpAddress(), 24, "Bruteforcing accounts"));
             client.disconnect();
             return;
         }

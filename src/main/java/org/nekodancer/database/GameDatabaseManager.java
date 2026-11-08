@@ -11,10 +11,29 @@ public interface GameDatabaseManager {
     void initialize();
 
     /**
+     * Checks if the ip address is blacklisted.
+     * @param ipAddress The given ip address.
+     * @return True if the ip address is blacklisted or else False.
+     */
+    boolean isIpBlacklisted(String ipAddress);
+
+    /**
      * Deletes a cafe topic.
      * @param cafeData The cafe topic's data.
      */
     void deleteCafe(CafeEntry cafeData);
+
+    /**
+     * Deletes a report.
+     * @param report The report's data.
+     */
+    void deleteReport(ReportEntry report);
+
+    /**
+     * Deletes a tribe.
+     * @param tribeData The tribe's object.
+     */
+    void deleteTribe(TribeEntry tribeData);
 
     /**
      * Loads the cafe topics from the given community.
@@ -53,6 +72,13 @@ public interface GameDatabaseManager {
     List<PlayerEntity> loadPlayersByEmail(String email, String password);
 
     /**
+     * Loads the every sanction of the given player.
+     * @param playerName The player's name.
+     * @return List of his sanctions.
+     */
+    List<SanctionEntry> loadSanctionsByPlayer(String playerName);
+
+    /**
      * Loads the last active sanction by the player.
      * @param playerName The player's name.
      * @param sanctionType The sanction's type.
@@ -61,10 +87,29 @@ public interface GameDatabaseManager {
     SanctionEntry loadLastSanction(String playerName, SanctionEntry.SanctionType sanctionType);
 
     /**
+     * Loads the reports.
+     * @return The reports.
+     */
+    List<ReportEntry> loadReports();
+
+    /**
+     * Loads the tribe from the database.
+     * @param tribeName The tribe's name.
+     * @return Tribe data from the database.
+     */
+    TribeEntry loadTribeByName(String tribeName);
+
+    /**
      * Saves the cafe topic. in the database.
      * @param cafeData The cafe topic's data.
      */
     void saveCafe(CafeEntry cafeData);
+
+    /**
+     * Saves the connection log.
+     * @param connectionLogEntry The connection log's data.
+     */
+    void saveConnectionLog(ConnectionLogEntry connectionLogEntry);
 
     /**
      * Saves the player in the database.
@@ -73,8 +118,26 @@ public interface GameDatabaseManager {
     void savePlayer(PlayerEntity playerData);
 
     /**
+     * Saves the reports in the database.
+     * @param report The report's data.
+     */
+    void saveReport(ReportEntry report);
+
+    /**
      * Saves the sanction in the database.
      * @param mySanction The sanction's data.
      */
     void saveSanction(SanctionEntry mySanction);
+
+    /**
+     * Saves the tribe in the database.
+     * @param tribeData The tribe's data.
+     */
+    void saveTribe(TribeEntry tribeData);
+
+    /**
+     * Saves the ip temp ban.
+     * @param ipTempBanEntry The ip temp ban's data.
+     */
+    void saveIpTempBan(IpTempBanEntry ipTempBanEntry);
 }

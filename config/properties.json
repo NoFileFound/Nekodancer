@@ -1,5 +1,5 @@
 {
-	"is_debug": false,
+	"is_debug": true,
 	"db_config": {
 		"host": "127.0.0.1",
 		"port": -1,
@@ -24,6 +24,7 @@
 	"game_config": {
 		"login_attempts": 15,
 		"max_accounts_per_email": 10,
-		"max_players": 100
+		"max_players": 100,
+		"chatfilter": []
 	}
 }

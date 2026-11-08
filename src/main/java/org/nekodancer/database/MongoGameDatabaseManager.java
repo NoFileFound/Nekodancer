@@ -16,6 +16,7 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
     private final Datastore datastore;
     private final Map<String, PlayerEntity> playerCache;
     private final Map<String, EnumMap<SanctionEntry.SanctionType, SanctionEntry>> latestSanctionCache;
+    private final Map<String, TribeEntry> tribeCache;
     private final boolean saveDatabase;
 
     /**
@@ -26,6 +27,7 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
         this.datastore = database.getDatastore();
         this.playerCache = new HashMap<>();
         this.latestSanctionCache = new HashMap<>();
+        this.tribeCache = new HashMap<>();
         this.saveDatabase = !isDebug;
     }
 
@@ -35,6 +37,25 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
     @Override
     public void initialize() {
 
+    }
+
+    /**
+     * Checks if the ip address is blacklisted.
+     * @param ipAddress The given ip address.
+     * @return True if the ip address is blacklisted or else False.
+     */
+    @Override
+    public boolean isIpBlacklisted(String ipAddress) {
+        IpTempBanEntry entry = this.datastore.find(IpTempBanEntry.class).filter(Filters.eq("ipAddress", ipAddress)).first();
+        if (entry == null)
+            return false;
+
+        if (Utils.getUnixTime() >= entry.getStartTime() + entry.getDuration() * 3600L) {
+            this.datastore.delete(entry);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -49,6 +70,27 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
         this.datastore.delete(cafeData);
     }
 
+    /**
+     * Deletes a report.
+     * @param reportEntry The report's data.
+     */
+    @Override
+    public void deleteReport(ReportEntry reportEntry) {
+        this.datastore.delete(reportEntry);
+    }
+
+    /**
+     * Deletes a tribe.
+     * @param tribeData The tribe's object.
+     */
+    @Override
+    public void deleteTribe(TribeEntry tribeData) {
+        if (!this.saveDatabase)
+            return;
+
+        this.datastore.delete(tribeData);
+        this.tribeCache.remove(tribeData.getTribeName(), tribeData);
+    }
 
     /**
      * Loads the cafe topics from the given community.
@@ -80,6 +122,16 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
     @Override
     public CafeEntry loadCafeTopicByPostId(long postId) {
         return this.datastore.find(CafeEntry.class).filter(Filters.eq("posts._id", postId)).first();
+    }
+
+    /**
+     * Loads the every sanction of the given player.
+     * @param playerName The player's name.
+     * @return List of his sanctions.
+     */
+    @Override
+    public List<SanctionEntry> loadSanctionsByPlayer(String playerName) {
+        return this.datastore.find(SanctionEntry.class).filter(Filters.eq("playerName", playerName)).iterator().toList();
     }
 
     /**
@@ -163,6 +215,34 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
     }
 
     /**
+     * Loads the reports.
+     * @return The reports.
+     */
+    @Override
+    public List<ReportEntry> loadReports() {
+        try (var stream = this.datastore.find(ReportEntry.class).stream()) {
+            return stream.toList();
+        }
+    }
+
+    /**
+     * Loads the tribe from the database.
+     * @param tribeName The tribe's name.
+     * @return Tribe data from the database.
+     */
+    @Override
+    public TribeEntry loadTribeByName(String tribeName) {
+        if (this.tribeCache.containsKey(tribeName))
+            return this.tribeCache.get(tribeName);
+
+        TribeEntry entity = this.datastore.find(TribeEntry.class).filter(Filters.eq("tribeName", tribeName)).first();
+        if (entity != null)
+            this.tribeCache.put(entity.getTribeName(), entity);
+
+        return entity;
+    }
+
+    /**
      * Saves the cafe topic. in the database.
      * @param cafeData The cafe topic's data.
      */
@@ -172,6 +252,15 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
             return;
 
         this.datastore.save(cafeData);
+    }
+
+    /**
+     * Saves the connection log in the database.
+     * @param connectionLogEntry The connection log's data.
+     */
+    @Override
+    public void saveConnectionLog(ConnectionLogEntry connectionLogEntry) {
+        this.datastore.save(connectionLogEntry);
     }
 
     /**
@@ -190,6 +279,15 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
     }
 
     /**
+     * Saves the report in the database.
+     * @param reportData The report's data.
+     */
+    @Override
+    public void saveReport(ReportEntry reportData) {
+        this.datastore.save(reportData);
+    }
+
+    /**
      * Saves the sanction in the database.
      * @param mySanction The sanction's data.
      */
@@ -199,5 +297,29 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
             return;
 
         this.datastore.save(mySanction);
+    }
+
+    /**
+     * Saves the tribe in the database.
+     * @param tribeData The tribe's data.
+     */
+    @Override
+    public void saveTribe(TribeEntry tribeData) {
+        if (!this.saveDatabase) {
+            this.tribeCache.put(tribeData.getTribeName(), tribeData);
+            return;
+        }
+
+        this.datastore.save(tribeData);
+        this.tribeCache.put(tribeData.getTribeName(), tribeData);
+    }
+
+    /**
+     * Saves the ip temp ban.
+     * @param ipTempBanEntry The ip temp ban's data.
+     */
+    @Override
+    public void saveIpTempBan(IpTempBanEntry ipTempBanEntry) {
+        this.datastore.save(ipTempBanEntry);
     }
 }

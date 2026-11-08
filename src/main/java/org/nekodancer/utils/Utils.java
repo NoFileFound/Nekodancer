@@ -1,5 +1,8 @@
 package org.nekodancer.utils;
 
+// Imports
+import java.util.Locale;
+
 public final class Utils {
     /**
      * Formats the room name.
@@ -130,6 +133,19 @@ public final class Utils {
             case "KO" -> "KR";
             default -> "INT";
         };
+    }
+
+    /**
+     * Gets the country's name by country's code.
+     * @param countryCode The country's code.
+     * @return The country's name.
+     */
+    public static String getCountryNameByCode(String countryCode) {
+        if (countryCode == null || countryCode.isBlank())
+            return "null";
+
+        String countryName = new Locale.Builder().setRegion(countryCode.toUpperCase()).build().getDisplayCountry(Locale.ENGLISH);
+        return countryName.isEmpty() ? "null" : countryName;
     }
 
     /**

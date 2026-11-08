@@ -10,6 +10,7 @@ import org.nekodancer.GamePlayer;
 import org.nekodancer.GameServer;
 import org.nekodancer.data.objects.StaffRoleType;
 import org.nekodancer.database.data.CafeEntry;
+import org.nekodancer.database.data.PlayerEntity;
 import org.nekodancer.database.data.SanctionEntry;
 import org.nekodancer.modules.impl.ModuleServer;
 import org.psframework.utils.PSTimer;
@@ -91,6 +92,7 @@ public final class ModuleCafe extends ModuleServer {
         List<CafeEntry> topics = this.server.getDatabase().loadCafeByCommunity(player.getPlayerCommunity());
         Map<Long, CafeEntry> cachedTopics = new HashMap<>();
         for (CafeEntry topic : topics) {
+            topic.getPosts().removeIf(post -> post.state > 0 && !this.checkPlayerCanModerateCafe(player));
             if (!topic.getPosts().isEmpty())
                 cachedTopics.put(topic.getId(), topic);
         }
@@ -174,7 +176,7 @@ public final class ModuleCafe extends ModuleServer {
         this.server.getDatabase().saveCafe(myTopic);
         this.sendOpenCafe(player);
         this.reloadCafeTopics(player);
-        player.broadcastPacket(new PacketSendCafeOpenTopic(myTopic.getId(), myTopic.getPosts(), player.getGlobalId(), this.checkPlayerCanModerateCafe(player)));
+        player.broadcastPacket(new PacketSendCafeOpenTopic(myTopic.getId(), myTopic.getPosts(), player.getGlobalId(), false, true, this.checkPlayerCanModerateCafe(player)));
     }
 
     /**
@@ -212,6 +214,8 @@ public final class ModuleCafe extends ModuleServer {
 
         player.broadcastPacket(new PacketSendOpenCafe(this.checkPlayerCanAccessCafe(player)));
         this.reloadCafeTopics(player);
+        if (!player.getIsGuest())
+            player.broadcastPacket(new PacketSendCafeBadReputationScore((short) player.getPlayerData().cafeReputation));
     }
 
     /**
@@ -221,15 +225,82 @@ public final class ModuleCafe extends ModuleServer {
      * @param posts The topic's posts.
      */
     public void sendTopicPosts(GamePlayer player, long topicId, List<CafeEntry.CafePost> posts) {
+        boolean isUnderModeration = false;
         if (posts == null) {
             CafeEntry myTopic = this.server.getDatabase().loadCafeTopicById(topicId);
             if (myTopic == null)
                 return;
 
             posts = myTopic.getPosts();
+            isUnderModeration = myTopic.getReportScore() > 0;
         }
 
-        player.broadcastPacket(new PacketSendCafeOpenTopic(topicId, posts, player.getGlobalId(), this.checkPlayerCanAccessCafe(player)));
+        player.broadcastPacket(new PacketSendCafeOpenTopic(topicId, posts, player.getGlobalId(), isUnderModeration, this.checkPlayerCanAccessCafe(player), this.checkPlayerCanModerateCafe(player)));
+    }
+
+    /**
+     * Function to handle the reported post.
+     * @param player The player's instance.
+     * @param topicId The given topic id.
+     * @param moderatePost Should moderate the post or keep  it.
+     */
+    public void handleReportedPost(GamePlayer player, long topicId, boolean moderatePost) {
+        if (!this.checkPlayerCanModerateCafe(player))
+            return;
+
+        String postAuthor = "";
+        CafeEntry myTopic = this.server.getDatabase().loadCafeTopicById(topicId);
+        if (myTopic == null)
+            return;
+
+        myTopic.reportScore = 0;
+        myTopic.getReporters().clear();
+        for (CafeEntry.CafePost post : myTopic.getPosts()) {
+            if (post.state == 1) {
+                post.moderator = player.getPlayerName();
+                post.state = (moderatePost) ? 2 : 0;
+                postAuthor = post.getAuthor();
+                break;
+            }
+        }
+
+        this.server.getDatabase().saveCafe(myTopic);
+        if (!postAuthor.isEmpty() && moderatePost) {
+            PlayerEntity authorAcc = (this.server.getPlayers().get(postAuthor) != null ? this.server.getPlayers().get(postAuthor).getPlayerData() : this.server.getDatabase().loadPlayerByName(postAuthor));
+            authorAcc.cafeReputation++;
+        }
+
+        this.sendTopicPosts(player, myTopic.getId(), myTopic.getPosts());
+    }
+
+    /**
+     * Reports a post.
+     * @param player The player's instance.
+     * @param topicId The topic id.
+     * @param postId The post id.
+     */
+    public void reportCafePost(GamePlayer player, long topicId, long postId) {
+        if (!this.checkPlayerCanAccessCafe(player))
+            return;
+
+        CafeEntry myTopic = this.server.getDatabase().loadCafeTopicById(topicId);
+        if (myTopic == null)
+            return;
+
+        long userId = player.getGlobalId();
+        if (!myTopic.getReporters().contains(userId)) {
+            myTopic.reportScore++;
+            myTopic.getReporters().add(userId);
+            for (CafeEntry.CafePost post : myTopic.getPosts()) {
+                if (post.getId() == postId) {
+                    post.state = 1;
+                    break;
+                }
+            }
+
+            this.server.getDatabase().saveCafe(myTopic);
+        }
+        ///  TODO: [UNKNOWN] Investigate in the original game.
     }
 
     /**

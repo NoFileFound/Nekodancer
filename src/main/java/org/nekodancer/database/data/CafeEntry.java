@@ -17,6 +17,8 @@ public class CafeEntry {
     private String community;
     private List<CafePost> posts;
     private Long date;
+    private List<Long> reporters;
+    public int reportScore;
 
     /**
      * Creates a new topic in the cafe.
@@ -24,6 +26,7 @@ public class CafeEntry {
     public CafeEntry() {
         // Required by Morphia.
         this.posts = new ArrayList<>();
+        this.reporters = new ArrayList<>();
     }
 
     /**
@@ -42,6 +45,7 @@ public class CafeEntry {
         this.authorId = authorId;
         this.community = community;
         this.date = Utils.getUnixTime();
+        this.reportScore = 0;
     }
 
     /**
@@ -93,6 +97,22 @@ public class CafeEntry {
     }
 
     /**
+     * Gets the topic's bad score.
+     * @return The topic's bad score.
+     */
+    public int getReportScore() {
+        return this.reportScore;
+    }
+
+    /**
+     * Gets the topic's reporters.
+     * @return The topic's reporters.
+     */
+    public List<Long> getReporters() {
+        return this.reporters;
+    }
+
+    /**
      * Gets the topic's title.
      * @return The topic's title.
      */
@@ -112,6 +132,8 @@ public class CafeEntry {
         private Long date;
         private List<Long> votes;
         public Integer points;
+        public Integer state;
+        public String moderator;
 
         /**
          * Creates a new cafe post.
@@ -134,6 +156,8 @@ public class CafeEntry {
             this.message = message;
             this.author = author;
             this.authorId = authorId;
+            this.state = 0;
+            this.moderator = "";
             this.date = Utils.getUnixTime();
             this.points = 0;
         }

@@ -5,6 +5,7 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.ArrayList;
 import java.util.List;
+import org.nekodancer.data.objects.PlayerGender;
 import org.nekodancer.data.objects.StaffRoleType;
 
 @Entity("accounts")
@@ -16,6 +17,16 @@ public class PlayerEntity {
     public long playedTime;
     private List<StaffRoleType> staffRoles;
     public boolean hasPublicAuthorization;
+    private List<String> friendList;
+    private List<String> ignoredList;
+    public PlayerGender playerGender;
+    public long lastConnectedTime;
+    public int shopSushi;
+    public String soulmate;
+    public String tribeName;
+    public TribeEntry.TribeRank tribeRank;
+    public int playerKarma;
+    public int cafeReputation;
 
     /**
      * Creates a new player entity.
@@ -23,6 +34,9 @@ public class PlayerEntity {
     public PlayerEntity() {
         // Required by Morphia.
         this.staffRoles = new ArrayList<>();
+        this.friendList = new ArrayList<>();
+        this.ignoredList = new ArrayList<>();
+        this.tribeRank = new TribeEntry.TribeRank();
     }
 
     /**
@@ -38,6 +52,9 @@ public class PlayerEntity {
         this.emailAddress = email;
         this.password = password;
         this.hasPublicAuthorization = false;
+        this.playerGender = PlayerGender.UNSPECIFIED;
+        this.soulmate = "";
+        this.tribeName = "";
     }
 
     /**
@@ -54,6 +71,22 @@ public class PlayerEntity {
      */
     public int getAccountId() {
         return this.accountId;
+    }
+
+    /**
+     * Gets the player's friend list.
+     * @return The player's friend list.
+     */
+    public List<String> getFriendList() {
+        return this.friendList;
+    }
+
+    /**
+     * Gets the player's ignored list.
+     * @return The player's blocked list.
+     */
+    public List<String> getIgnoredList() {
+        return this.ignoredList;
     }
 
     /**

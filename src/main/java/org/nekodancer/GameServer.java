@@ -10,6 +10,7 @@ import io.netty.channel.EventLoopGroup;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +30,16 @@ import org.nekodancer.config.NekodancerConfig;
 import org.nekodancer.data.objects.StaffRoleType;
 import org.nekodancer.database.GameDatabaseManager;
 import org.nekodancer.database.GameDatabaseManagerFactory;
+import org.nekodancer.database.data.IpTempBanEntry;
+import org.nekodancer.database.data.PlayerEntity;
+import org.nekodancer.database.data.SanctionEntry;
 import org.nekodancer.modules.ModuleCafe;
+import org.nekodancer.modules.ModuleModopwet;
 import org.nekodancer.network.NetDecoder;
 import org.nekodancer.network.NetHandler;
 import org.nekodancer.network.NetSession;
 import org.nekodancer.utils.PlayerQueue;
+import org.nekodancer.utils.Utils;
 import org.psframework.admin.PSAdminConfig;
 import org.psframework.database.PSDatabaseConfig;
 import org.psframework.game.PSGameServer;
@@ -45,6 +51,7 @@ import org.psframework.utils.PSRandom;
 import org.psframework.utils.PSTimer;
 
 // Packets
+import org.nekodancer.packets.send.chat.PacketSendServerMessage;
 import org.nekodancer.packets.send.chat.PacketSendStaffChatMessage;
 
 public final class GameServer extends PSGameServer {
@@ -57,10 +64,14 @@ public final class GameServer extends PSGameServer {
     private final CommandLoader commandManager;
     private final PlayerQueue playerQueue;
     private final ModuleCafe parseCafe;
+    private final ModuleModopwet parseModopwet;
     private final Pattern chatFilterPattern;
     private final Map<ChannelId, NetSession> clientSessions;
     private final Map<String, PSTimer> accountCreationTimer;
-    private final Map<String, Long> tempBannedIPs;
+    private final Map<String, PSTimer> marriageTimers;
+    private final Map<String, List<String>> chats;
+    private final Map<String, Map<String, Deque<String[]>>> chatMessages;
+    private final Map<String, Map<String, Deque<String[]>>> whisperMessages;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     private final Map<String, GamePlayer> players;
     private final Map<String, GameRoom> rooms;
@@ -82,18 +93,22 @@ public final class GameServer extends PSGameServer {
         this.channels = new ArrayList<>();
         this.generalPacketHandler = new PSPacketHandler("org.nekodancer.packets.recv");
         this.clientSessions = new ConcurrentHashMap<>();
-        this.tempBannedIPs = new ConcurrentHashMap<>();
         this.players = new ConcurrentHashMap<>();
         this.rooms = new ConcurrentHashMap<>();
+        this.chats = new HashMap<>();
+        this.chatMessages = new HashMap<>();
+        this.whisperMessages = new HashMap<>();
         this.playerQueue = new PlayerQueue(this.nekodancerConfig.getGameConfig().getMaxPlayers());
         this.chatFilterPattern = Pattern.compile("(?iu)(" + this.nekodancerConfig.getGameConfig().getChatFilter().stream().map(word -> word.codePoints().mapToObj(cp -> Pattern.quote(new String(Character.toChars(cp)))).collect(Collectors.joining("[\\p{P}\\p{S}]*"))).collect(Collectors.joining("|")) + ")");
 
         // Instances
         this.commandManager = new CommandLoader(this);
         this.parseCafe = new ModuleCafe(this);
+        this.parseModopwet = new ModuleModopwet(this);
 
         // Timers
         this.accountCreationTimer = new HashMap<>();
+        this.marriageTimers = new ConcurrentHashMap<>();
     }
 
     /**
@@ -109,6 +124,7 @@ public final class GameServer extends PSGameServer {
             this.databaseManager = GameDatabaseManagerFactory.create(this.database, this.nekodancerConfig.getIsDebug());
             this.databaseManager.initialize();
             this.logger.info("[Database] Main Database initialized.");
+            this.parseModopwet.loadDatabase();
             this.generalPacketHandler.registerPackets();
             this.logger.debug("[PacketHandler] Registered successfully.");
             if (this.nekodancerConfig.getIsDebug())
@@ -124,7 +140,21 @@ public final class GameServer extends PSGameServer {
      */
     @Override
     public void saveDatabase() {
+        // Saves the player data.
+        for (GamePlayer player : this.players.values()) {
+            try {
+                if (player.getIsGuest())
+                    continue;
 
+                this.databaseManager.savePlayer(player.getPlayerData());
+            } catch (Exception ex) {
+                this.logger.error(String.format("[Database] Failed to save player %s.", player.getPlayerName()), ex);
+            }
+        }
+
+        // saves the modopwet reports.
+        this.parseModopwet.saveDatabase();
+        this.database.disconnect();
     }
 
     /**
@@ -214,6 +244,22 @@ public final class GameServer extends PSGameServer {
     }
 
     /**
+     * Gets the global chats.
+     * @return The global chats.
+     */
+    public Map<String, List<String>> getChats() {
+        return this.chats;
+    }
+
+    /**
+     * Gets the chat messages.
+     * @return The chat messages.
+     */
+    public Map<String, Map<String, Deque<String[]>>> getChatMessages() {
+        return this.chatMessages;
+    }
+
+    /**
      * Gets the list of connected sessions to the server.
      * @return The list of connected sessions.
      */
@@ -251,6 +297,23 @@ public final class GameServer extends PSGameServer {
      */
     public PSGeoIP getGeoIP() {
         return this.geoIP;
+    }
+
+    /**
+     * Gets the marriage timer based on the player.
+     * @param username The player.
+     * @return The player's marriage timer.
+     */
+    public PSTimer getMarriageTimer(String username) {
+        return this.marriageTimers.computeIfAbsent(username, _ -> new PSTimer(this.scheduler, 1, TimeUnit.HOURS));
+    }
+
+    /**
+     * Gets the modopwet's instance.
+     * @return The modopwet's instance.
+     */
+    public ModuleModopwet getParseModopwet() {
+        return this.parseModopwet;
     }
 
     /**
@@ -311,11 +374,79 @@ public final class GameServer extends PSGameServer {
     }
 
     /**
-     * Gets the server's temperately banned IP Addresses.
-     * @return The server's temp banned IPs.
+     * Gets the whisper messages.
+     * @return The whisper messages.
      */
-    public Map<String, Long> getTempBannedIPs() {
-        return this.tempBannedIPs;
+    public Map<String, Map<String, Deque<String[]>>> getWhisperMessages() {
+        return this.whisperMessages;
+    }
+
+    /**
+     * Bans an ip address.
+     * @param ipAddress The given ip address.
+     * @param banHours The ban hours.
+     * @param reason The reason.
+     */
+    public void sendIPBan(String ipAddress, int banHours, String reason) {
+        if (this.databaseManager.isIpBlacklisted(ipAddress))
+            return;
+
+        this.databaseManager.saveIpTempBan(new IpTempBanEntry(ipAddress, banHours, reason));
+    }
+
+    /**
+     * Bans the player.
+     * @param playerName The player's name.
+     * @param banHours The ban hours.
+     * @param banReason The ban's reason.
+     * @param moderatorPlayer The moderator's instance.
+     * @param isSilent Is the ban message silent.
+     * @return True if the ban was successful or else False.
+     */
+    public boolean sendPlayerBan(String playerName, int banHours, String banReason, GamePlayer moderatorPlayer, boolean isSilent) {
+        if (playerName.equals(moderatorPlayer.getPlayerName()))
+            return false;
+
+        if (banHours <= 0) {
+            moderatorPlayer.broadcastPacket(new PacketSendServerMessage(true, "Invalid ban duration."));
+            return false;
+        }
+
+        GamePlayer player = this.players.get(playerName);
+        if (player != null && player.getIsGuest()) {
+            banHours = Math.max(banHours, 24);
+            this.sendIPBan(player.getIpAddress(), banHours, banReason);
+            moderatorPlayer.broadcastPacket(new PacketSendServerMessage(true, String.format("The player %s got banned.", playerName)));
+            this.sendServerMessageOthers(moderatorPlayer, String.format("%s banned the player %s for %sh (%s).", moderatorPlayer.getPlayerName(), playerName, banHours, banReason), StaffRoleType.PUBLIC_MODO);
+            return true;
+        }
+
+        PlayerEntity playerEntity = this.getDatabase().loadPlayerByName(playerName);
+        if (playerEntity == null) {
+            moderatorPlayer.broadcastPacket(new PacketSendServerMessage(true, "The supplied argument isn't a valid nickname."));
+            return false;
+        }
+
+        SanctionEntry lastSanction = this.getDatabase().loadLastSanction(playerName, SanctionEntry.SanctionType.SANCTION_BAN);
+        if (lastSanction != null) {
+            moderatorPlayer.broadcastPacket(new PacketSendServerMessage(true, String.format("Player [%s] is already banned, please wait.", playerName)));
+            return false;
+        }
+
+        long endDate = Utils.getUnixTime() + (banHours * 3600L);
+        SanctionEntry sanction = new SanctionEntry(this.getNextDatabaseCounterId("lastSanctionId"), playerName, player != null ? player.getIpAddress() : "", SanctionEntry.SanctionType.SANCTION_BAN, moderatorPlayer.getPlayerName(), banReason, endDate);
+        this.getDatabase().saveSanction(sanction);
+        if (player != null) {
+            if (!isSilent)
+                player.getPlayerRoom().broadcastPacket(player, new PacketSendStaffChatMessage(0, "", "$Message_Ban", new ArrayList<>(List.of(playerName, String.valueOf(banHours), banReason)), true));
+
+            this.sendIPBan(player.getIpAddress(), banHours, banReason);
+            player.disconnect(true);
+        }
+
+        moderatorPlayer.broadcastPacket(new PacketSendServerMessage(true, String.format("The player %s got banned.", playerName)));
+        this.sendServerMessageOthers(moderatorPlayer, String.format("%s %s banned the player %s for %sh (%s).", moderatorPlayer.getPlayerName(), (player != null ? "" : "offline"), playerName, banHours, banReason), StaffRoleType.PUBLIC_MODO);
+        return true;
     }
 
     /**
@@ -361,7 +492,25 @@ public final class GameServer extends PSGameServer {
         }
     }
 
+    /**
+     * Sends a #Server message to every else in the server.
+     * @param player The excluded player.
+     * @param message The message to send.
+     * @param staffRole The minimum required staff role.
+     */
+    public void sendServerMessageOthers(GamePlayer player, String message, StaffRoleType staffRole) {
+        for (GamePlayer target : this.players.values()) {
+            if (target == player)
+                continue;
 
+            List<StaffRoleType> targetRoles = target.getPlayerData().getStaffRoles();
+            boolean isAdmin = targetRoles.contains(StaffRoleType.ADMIN);
+            boolean isModerator = isAdmin || targetRoles.contains(StaffRoleType.PUBLIC_MODO) || targetRoles.contains(StaffRoleType.PRIVATE_MODO);
+            boolean canSee = isAdmin || (staffRole == StaffRoleType.MAPCREW && (isModerator || targetRoles.contains(StaffRoleType.MAPCREW))) || ((staffRole == StaffRoleType.PUBLIC_MODO || staffRole == StaffRoleType.PRIVATE_MODO) && isModerator);
+            if (canSee)
+                target.broadcastPacket(new PacketSendServerMessage(false, message));
+        }
+    }
 
 
 
