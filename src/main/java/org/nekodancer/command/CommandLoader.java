@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import org.nekodancer.GamePlayer;
 import org.nekodancer.GameServer;
 import org.nekodancer.data.objects.StaffRoleType;
+import org.nekodancer.database.data.CommandLogEntry;
 import org.nekodancer.database.data.TribeEntry;
 
 public final class CommandLoader {
@@ -70,7 +71,7 @@ public final class CommandLoader {
             return;
         }
 
-        /// TODO: this.server.getDatabase().saveCommandLog(new CommandLogEntry(client.getPlayerName(), client.getIpAddress(), client.getPlayerCommunity(), rawMessage));
+        this.server.getDatabase().saveCommandLog(new CommandLogEntry(client.getPlayerName(), client.getIpAddress(), client.getPlayerCommunity(), rawMessage));
         handler.execute(client, this.server, args);
     }
 
@@ -95,6 +96,7 @@ public final class CommandLoader {
                 case Command.CommandPermission.ARBITRE -> hasPerm = client.hasStaffPermission(StaffRoleType.ARBITRE, false);
                 case Command.CommandPermission.MODERATOR -> hasPerm = client.hasStaffPermission(StaffRoleType.PUBLIC_MODO, false) || client.hasStaffPermission(StaffRoleType.PRIVATE_MODO, false);
                 case Command.CommandPermission.ADMINISTRATOR -> hasPerm = client.hasStaffPermission(StaffRoleType.ADMIN, false);
+                case Command.CommandPermission.ROOM_OWNER -> hasPerm = client.getPlayerRoom().getRoomAuthor().equals(client.getPlayerName());
                 case Command.CommandPermission.TRIBE -> hasPerm = client.getPlayerRoom().getRoomNameSuffix().startsWith("*\u0003" + client.getPlayerData().tribeName) && client.getPlayerData().tribeRank.hasPerm(TribeEntry.TribeRank.TribePerms.INVITE_MEMBERS);
             }
 

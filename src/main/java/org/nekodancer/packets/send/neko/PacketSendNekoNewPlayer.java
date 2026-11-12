@@ -8,7 +8,7 @@ import org.psframework.network.PSSendPacket;
 import org.psframework.network.PSSendPacketException;
 import org.psframework.utils.PSByteArray;
 
-public class PacketSendNekoNewPlayer extends PSSendPacket {
+public final class PacketSendNekoNewPlayer extends PSSendPacket {
     private final RoomPlayerInfo playerInfo;
 
     /**
@@ -26,12 +26,17 @@ public class PacketSendNekoNewPlayer extends PSSendPacket {
         NetByteArray packet = new NetByteArray();
         packet.writeUTF(this.playerInfo.playerName, true);
         packet.writeShort((short) this.playerInfo.sessionId);
-        packet.writeShort((short) 0); /// TODO:
-        packet.writeShort((short) 0); /// TODO:
+        packet.writeShort((short) this.playerInfo.positionX);
+        packet.writeShort((short) this.playerInfo.positionY);
         packet.writeShort((short) this.playerInfo.playerScore);
         packet.writeBoolean(this.playerInfo.isDead);
         packet.writeByte(this.playerInfo.playerFurId);
-        packet.writeByte(0); /// TODO:
+        packet.writeByte(this.playerInfo.shopItemList.size());
+        for (var shopItem : this.playerInfo.shopItemList) {
+            packet.writeByte(shopItem.getItemCategory());
+            packet.writeShort((short) shopItem.getItemId());
+        }
+
         return packet;
     }
 }

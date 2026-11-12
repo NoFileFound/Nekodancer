@@ -24,6 +24,12 @@ public interface GameDatabaseManager {
     void deleteCafe(CafeEntry cafeData);
 
     /**
+     * Deletes a ip temp ban.
+     * @param ipTempBanData The ip temp's data.
+     */
+    void deleteIpTempBan(IpTempBanEntry ipTempBanData);
+
+    /**
      * Deletes a report.
      * @param report The report's data.
      */
@@ -55,6 +61,27 @@ public interface GameDatabaseManager {
      * @return A cafe topic.
      */
     CafeEntry loadCafeTopicByPostId(long postId);
+
+    /**
+     * Loads command logs by player name.
+     * @param playerName The player's name.
+     * @return A list of recently entered commands.
+     */
+    List<CommandLogEntry> loadCommandLogByPlayer(String playerName);
+
+    /**
+     * Loads a connection logs by IP address.
+     * @param ipAddress The IP address.
+     * @return List of recently connections.
+     */
+    List<ConnectionLogEntry> loadConnectionLogsByIPAddress(String ipAddress);
+
+    /**
+     * Loads a connection logs by player name.
+     * @param playerName The player's name.
+     * @return List of his recently connections.
+     */
+    List<ConnectionLogEntry> loadConnectionLogsByPlayer(String playerName);
 
     /**
      * Loads the player from the database.
@@ -93,6 +120,13 @@ public interface GameDatabaseManager {
     List<ReportEntry> loadReports();
 
     /**
+     * Loads temp ip ban info.
+     * @param ipAddress The given ip address.
+     * @return The temp ip ban info.
+     */
+    IpTempBanEntry loadTempIpBanByIp(String ipAddress);
+
+    /**
      * Loads the tribe from the database.
      * @param tribeName The tribe's name.
      * @return Tribe data from the database.
@@ -104,6 +138,12 @@ public interface GameDatabaseManager {
      * @param cafeData The cafe topic's data.
      */
     void saveCafe(CafeEntry cafeData);
+
+    /**
+     * Saves the command log.
+     * @param commandLogEntry The command log's data.
+     */
+    void saveCommandLog(CommandLogEntry commandLogEntry);
 
     /**
      * Saves the connection log.

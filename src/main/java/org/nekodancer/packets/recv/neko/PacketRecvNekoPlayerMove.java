@@ -18,12 +18,14 @@ import org.nekodancer.packets.send.neko.PacketSendNekoPlayerMove;
 public final class PacketRecvNekoPlayerMove extends PSReceivePacket<GameServer, NetSession, NetByteArray> {
     @Override
     public void handle(GameServer gameServer, NetSession client, NetByteArray psHeader, NetByteArray psData) throws PSReceivePacketException {
-        GamePlayer player = client.getPlayer();
         int posX = psData.readShort();
         int posY = psData.readShort();
+        GamePlayer player = client.getPlayer();
+        if (player.getPlayerRoom().getIsCurrentlyPlay())
+            return;
 
-        ///  TODO: disable this when the music starts.
-
+        player.positionX = posX;
+        player.positionY = posY;
         player.getPlayerRoom().broadcastPacket(player, new PacketSendNekoPlayerMove(player.getSessionId(), posX, posY));
     }
 }

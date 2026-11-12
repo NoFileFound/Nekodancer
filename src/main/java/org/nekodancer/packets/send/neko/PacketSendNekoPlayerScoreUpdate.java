@@ -12,8 +12,10 @@ public final class PacketSendNekoPlayerScoreUpdate extends PSSendPacket {
 
     /**
      * Creates a new send packet of SEND_NEKO_PLAYER_SCORE_UPDATE.
+     * @param sessionId The player's session id.
      * @param playerScore The player's score on the music.
-     * @param playerScore The player's score accuracy.
+     * @param bestStreak The player's best combo.
+     * @param playerHealth The player's health.
      */
     public PacketSendNekoPlayerScoreUpdate(int sessionId, int playerScore, int bestStreak, int playerHealth) {
         super(PacketOpcodes.SEND_NEKO_PLAYER_SCORE_UPDATE);

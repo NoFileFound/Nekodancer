@@ -450,24 +450,6 @@ public final class ModuleModopwet extends ModuleServer {
     }
 
     /**
-     * Handles when the player spies on the reported player.
-     * @param moderatorPlayer The moderator's player instance.
-     * @param playerName The reported player's name.
-     * @param isFollowing Is the operation [follow] or [watch]
-     */
-    public void handleWatchReport(GamePlayer moderatorPlayer, String playerName, boolean isFollowing) {
-        ///  TODO: Implement handleWatchReport.
-    }
-
-    /**
-     * Handles when the player stop watching on the reported player.
-     * @param moderatorPlayer The moderator's player instance.
-     */
-    public void handleStopWatchReport(GamePlayer moderatorPlayer) {
-        ///  TODO: Implement handleStopWatchReport.
-    }
-
-    /**
      * Gets the moderators in the given room.
      * @param roomName The room's name.
      * @return List of moderator's player names.

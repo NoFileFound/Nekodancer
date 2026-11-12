@@ -20,6 +20,9 @@ dependencies {
 
     // Database
     implementation('dev.morphia.morphia:morphia-core:2.4.14')
+
+    // Lua
+    implementation("org.luaj:luaj-jse:3.0.1")
 }
 
 shadowJar {

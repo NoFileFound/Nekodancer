@@ -33,12 +33,16 @@ public final class GamePlayer {
     private final int playerId;
     private final boolean isGuest;
     private final long loginTime;
+    private final String playerCommunity;
     private GameRoom playerRoom;
     private String roomName;
-    private String playerCommunity;
     private String lastRoomName;
     public List<String> modopwetSubscribedCommunities;
+    public int playerScore;
+    public int positionX;
+    public int positionY;
     public int silenceType;
+    public boolean canSelectMusic;
     public boolean isDead;
     public boolean isMumuted;
     public boolean isModopwetSortedByTime;
@@ -54,6 +58,7 @@ public final class GamePlayer {
     public String lastChatMessage;
     public String modopwetCurrentCommunity;
     public String silenceMessage;
+    public Thread luaThread;
 
     /**
      * Creates a new player.
@@ -211,11 +216,36 @@ public final class GamePlayer {
     }
 
     /**
+     * Gets the player's information in the room.
+     * @return The player's information in the room.
+     */
+    public RoomPlayerInfo getPlayerRoomInfo() {
+        return new RoomPlayerInfo(
+                this.getPlayerName(),
+                this.getSessionId(),
+                this.positionX,
+                this.positionY,
+                this.playerScore,
+                this.isDead,
+                this.playerData.currentCatFurId,
+                this.playerData.getShopItems()
+        );
+    }
+
+    /**
      * Gets the player's last room.
      * @return The player's last room.
      */
     public String getLastRoomName() {
         return this.lastRoomName;
+    }
+
+    /**
+     * Gets the player's login time.
+     * @return The player's login time.
+     */
+    public long getLoginTime() {
+        return this.loginTime;
     }
 
     /**
@@ -262,6 +292,14 @@ public final class GamePlayer {
             return true;
 
         return this.playerData.getStaffRoles().contains(staffRole);
+    }
+
+    /**
+     * Sends the player's death.
+     */
+    public void sendDeath() {
+        if (this.isDead)
+            return;
     }
 
     /**
@@ -399,26 +437,5 @@ public final class GamePlayer {
      */
     public void setPlayerRoom(GameRoom playerRoom) {
         this.playerRoom = playerRoom;
-    }
-
-
-
-
-
-
-
-
-    /**
-     * Gets the player's information in the room.
-     * @return The player's information in the room.
-     */
-    public RoomPlayerInfo getPlayerRoomInfo() {
-        return new RoomPlayerInfo(
-                this.getPlayerName(),
-                this.getSessionId(),
-                0,
-                this.isDead,
-                4
-        );
     }
 }

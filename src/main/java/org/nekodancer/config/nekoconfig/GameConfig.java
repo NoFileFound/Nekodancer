@@ -13,6 +13,8 @@ public class GameConfig {
     private int max_players = 1000;
     @JsonProperty("chatfilter")
     private List<String> chatfilter;
+    @JsonProperty("yt_key")
+    private String yt_key;
 
     /**
      * Creates a new game config.
@@ -51,5 +53,13 @@ public class GameConfig {
      */
     public List<String> getChatFilter() {
         return this.chatfilter;
+    }
+
+    /**
+     * Gets the server's youtube api key.
+     * @return The server's youtube api key.
+     */
+    public String getYoutubeApiKey() {
+        return this.yt_key;
     }
 }

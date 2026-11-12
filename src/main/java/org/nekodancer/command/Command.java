@@ -50,6 +50,7 @@ public @interface Command {
         NONE,
         GUEST,
         PLAYER,
+        ROOM_OWNER,
         TRIBE,
         FUNCORP,
         LUADEV,

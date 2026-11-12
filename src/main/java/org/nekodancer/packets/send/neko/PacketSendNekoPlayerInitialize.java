@@ -34,8 +34,16 @@ public class PacketSendNekoPlayerInitialize extends PSSendPacket {
         packet.writeUTF(this.playerName, true);
         packet.writeUTF(this.songTitle, true);
         packet.writeUTF(this.songUrl, true);
-        packet.writeInt(this.songPositionMs);
-        packet.writeBoolean(false);
+        packet.writeInt(this.songPositionMs + 2);
+        packet.writeBoolean(true); // enabled
+
+        packet.writeInt(100);
+        packet.writeByte(0x03);
+        packet.writeByte(0);
+
+        packet.writeInt(200);
+        packet.writeByte(0x0C);
+        packet.writeByte(0);
         return packet;
     }
 }

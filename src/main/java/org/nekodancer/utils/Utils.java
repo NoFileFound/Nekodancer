@@ -1,9 +1,76 @@
 package org.nekodancer.utils;
 
 // Imports
+import java.net.URI;
+import java.util.List;
 import java.util.Locale;
+import org.nekodancer.data.objects.StaffRoleType;
 
 public final class Utils {
+    /**
+     * Colors the given IP address.
+     * @param ipAddress The given IP address.
+     * @return The IP address's color.
+     */
+    public static String colorIP(String ipAddress) {
+        ipAddress = ipAddress.startsWith("#") ? ipAddress.substring(1) : ipAddress;
+        String[] components = ipAddress.split("\\.");
+        StringBuilder concatenated = new StringBuilder();
+        for (String component : components)
+            concatenated.append(component);
+
+        while (concatenated.length() < 8)
+            concatenated.append("0");
+
+        concatenated.setLength(8);
+        int r = Integer.parseInt(concatenated.substring(0, 2), 16);
+        int g = Integer.parseInt(concatenated.substring(2, 4), 16);
+        int b = Integer.parseInt(concatenated.substring(4, 6), 16);
+        return String.format("#%02X%02X%02X", r, g, b);
+    }
+
+    /**
+     * Converts the hex ip to normal ip address.
+     * @param ip Hex form ip address.
+     * @return A normal ip address.
+     */
+    public static String decodeIP(String ip) {
+        if (ip.isEmpty())
+            return "(offline)";
+
+        ip = ip.substring(1);
+        String[] parts = ip.split("\\.");
+        StringBuilder decodedIP = new StringBuilder();
+
+        for (String part : parts) {
+            int value = Integer.parseInt(part, 16);
+            decodedIP.append(value).append(".");
+        }
+
+        return decodedIP.substring(0, decodedIP.length() - 1);
+    }
+
+    /**
+     * Converts the IP address to HEX format.
+     * @param ipAddress The given IP address.
+     * @return A HEX format of the ip address.
+     */
+    public static String encodeIP(String ipAddress) {
+        if (ipAddress.isEmpty())
+            return "";
+
+        String[] parts = ipAddress.split("\\.");
+        StringBuilder encodedIP = new StringBuilder("#");
+        for (String part : parts) {
+            encodedIP.append(String.format("%02X", Integer.parseInt(part)));
+            if (!part.equals(parts[parts.length - 1])) {
+                encodedIP.append(".");
+            }
+        }
+
+        return encodedIP.toString();
+    }
+
     /**
      * Formats the room name.
      * @param roomName The room name to format.
@@ -149,10 +216,65 @@ public final class Utils {
     }
 
     /**
+     * Gets the profile color byte.
+     *
+     * @param staffRoles The player's staff roles.
+     * @return Profile color.
+     */
+    public static byte getProfileColorId(List<StaffRoleType> staffRoles) {
+        if (staffRoles.contains(StaffRoleType.ADMIN))
+            return 10;
+
+        if (staffRoles.contains(StaffRoleType.PUBLIC_MODO))
+            return 5;
+
+        if (staffRoles.contains(StaffRoleType.MAPCREW))
+            return 11;
+
+        if (staffRoles.contains(StaffRoleType.FUNCORP))
+            return 13;
+
+        return 1;
+    }
+
+    /**
      * Gets the unix timestamp.
      * @return Seconds.
      */
     public static long getUnixTime() {
         return System.currentTimeMillis() / 1000;
+    }
+
+    /**
+     * Gets the youtube's id from a url.
+     * @param url The given url.
+     * @return The youtube's id.
+     */
+    public static String getYoutubeID(String url) {
+        try {
+            URI uri = URI.create(url);
+            String host = uri.getHost();
+            if (host == null)
+                return null;
+
+            host = host.toLowerCase();
+            if (host.equals("youtube.com") || host.equals("www.youtube.com") || host.equals("m.youtube.com")) {
+                String path = uri.getPath();
+                if ("/watch".equals(path)) {
+                    for (String parameter : uri.getRawQuery() == null ? new String[0] : uri.getRawQuery().split("&")) {
+                        String[] pair = parameter.split("=", 2);
+                        if (pair.length == 2 && pair[0].equals("v"))
+                            return pair[1];
+                    }
+                }
+
+                if (path != null && (path.startsWith("/shorts/") || path.startsWith("/embed/") || path.startsWith("/live/")))
+                    return path.split("/")[2];
+            }
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+
+        return null;
     }
 }

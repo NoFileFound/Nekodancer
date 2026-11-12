@@ -71,6 +71,15 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
     }
 
     /**
+     * Deletes a ip temp ban.
+     * @param ipTempBanData The ip temp's data.
+     */
+    @Override
+    public void deleteIpTempBan(IpTempBanEntry ipTempBanData) {
+        this.datastore.delete(ipTempBanData);
+    }
+
+    /**
      * Deletes a report.
      * @param reportEntry The report's data.
      */
@@ -122,6 +131,68 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
     @Override
     public CafeEntry loadCafeTopicByPostId(long postId) {
         return this.datastore.find(CafeEntry.class).filter(Filters.eq("posts._id", postId)).first();
+    }
+
+    /**
+     * Loads command logs by player name.
+     * @param playerName The player's name.
+     * @return A list of recently entered commands.
+     */
+    @Override
+    public List<CommandLogEntry> loadCommandLogByPlayer(String playerName) {
+        return this.datastore.find(CommandLogEntry.class).filter(Filters.eq("playerName", playerName)).iterator().toList();
+    }
+
+    /**
+     * Loads a connection logs by IP address.
+     * @param ipAddress The IP address.
+     * @return List of recently connections.
+     */
+    @Override
+    public List<ConnectionLogEntry> loadConnectionLogsByIPAddress(String ipAddress) {
+        return this.datastore.find(ConnectionLogEntry.class).filter(Filters.eq("ipAddress", ipAddress)).iterator().toList();
+    }
+
+    /**
+     * Loads a connection logs by player name.
+     * @param playerName The player's name.
+     * @return List of his recently connections.
+     */
+    @Override
+    public List<ConnectionLogEntry> loadConnectionLogsByPlayer(String playerName) {
+        return this.datastore.find(ConnectionLogEntry.class).filter(Filters.eq("playerName", playerName)).iterator().toList();
+    }
+
+    /**
+     * Loads the player from the database.
+     * @param nickname The player's username.
+     * @return The player data.
+     */
+    @Override
+    public PlayerEntity loadPlayerByName(String nickname) {
+        if (this.playerCache.containsKey(nickname))
+            return this.playerCache.get(nickname);
+
+        PlayerEntity entity = this.datastore.find(PlayerEntity.class).filter(Filters.eq("username", nickname)).first();
+        if (entity != null)
+            this.playerCache.put(entity.getUsername(), entity);
+
+        return entity;
+    }
+
+    /**
+     * Loads all players with the given email address.
+     * @param email The given email address.
+     * @param password The given password. If the password is {@code  ""} then it will get every player with email address with any password.
+     * @return List of players.
+     */
+    @Override
+    public List<PlayerEntity> loadPlayersByEmail(String email, String password) {
+        var players = this.datastore.find(PlayerEntity.class).filter(Filters.eq("emailAddress", email)).iterator().toList();
+        if (password.isEmpty())
+            return players;
+
+        return players.stream().anyMatch(player -> password.equals(player.password)) ? players : List.of();
     }
 
     /**
@@ -183,38 +254,6 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
     }
 
     /**
-     * Loads the player from the database.
-     * @param nickname The player's username.
-     * @return The player data.
-     */
-    @Override
-    public PlayerEntity loadPlayerByName(String nickname) {
-        if (this.playerCache.containsKey(nickname))
-            return this.playerCache.get(nickname);
-
-        PlayerEntity entity = this.datastore.find(PlayerEntity.class).filter(Filters.eq("username", nickname)).first();
-        if (entity != null)
-            this.playerCache.put(entity.getUsername(), entity);
-
-        return entity;
-    }
-
-    /**
-     * Loads all players with the given email address.
-     * @param email The given email address.
-     * @param password The given password. If the password is {@code  ""} then it will get every player with email address with any password.
-     * @return List of players.
-     */
-    @Override
-    public List<PlayerEntity> loadPlayersByEmail(String email, String password) {
-        var players = this.datastore.find(PlayerEntity.class).filter(Filters.eq("emailAddress", email)).iterator().toList();
-        if (password.isEmpty())
-            return players;
-
-        return players.stream().anyMatch(player -> password.equals(player.password)) ? players : List.of();
-    }
-
-    /**
      * Loads the reports.
      * @return The reports.
      */
@@ -223,6 +262,16 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
         try (var stream = this.datastore.find(ReportEntry.class).stream()) {
             return stream.toList();
         }
+    }
+
+    /**
+     * Loads temp ip ban info.
+     * @param ipAddress The given ip address.
+     * @return The temp ip ban info.
+     */
+    @Override
+    public IpTempBanEntry loadTempIpBanByIp(String ipAddress) {
+        return this.datastore.find(IpTempBanEntry.class).filter(Filters.eq("ipAddress", ipAddress)).first();
     }
 
     /**
@@ -252,6 +301,15 @@ public final class MongoGameDatabaseManager implements GameDatabaseManager {
             return;
 
         this.datastore.save(cafeData);
+    }
+
+    /**
+     * Saves the command log.
+     * @param commandLogEntry The command log's data.
+     */
+    @Override
+    public void saveCommandLog(CommandLogEntry commandLogEntry) {
+        this.datastore.save(commandLogEntry);
     }
 
     /**

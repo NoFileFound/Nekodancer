@@ -1,9 +1,7 @@
 package org.nekodancer.packets.recv.modopwet;
 
 // Imports
-import org.nekodancer.GamePlayer;
 import org.nekodancer.GameServer;
-import org.nekodancer.data.objects.StaffRoleType;
 import org.nekodancer.network.NetByteArray;
 import org.nekodancer.network.NetSession;
 import org.nekodancer.packets.PacketOpcodes;
@@ -16,10 +14,6 @@ import org.psframework.network.PSReceivePacketException;
 public final class PacketRecvModopwetStopWatchReport extends PSReceivePacket<GameServer, NetSession, NetByteArray> {
     @Override
     public void handle(GameServer gameServer, NetSession client, NetByteArray psHeader, NetByteArray psData) throws PSReceivePacketException {
-        GamePlayer player = client.getPlayer();
-        if (!player.hasStaffPermission(StaffRoleType.PUBLIC_MODO, false) && !player.hasStaffPermission(StaffRoleType.PRIVATE_MODO, false))
-            return;
 
-        gameServer.getParseModopwet().handleStopWatchReport(player);
     }
 }
